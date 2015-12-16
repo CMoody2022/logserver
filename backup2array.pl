@@ -2,7 +2,7 @@
 # File: backup2array.pl
 # Desc: Moves certain files older than X number of days off certain remote
 #+      servers and onto the local volume
-# Code: Original author unknown; now managed by Shinto, 2007-07-30 last update
+# Oringally written by Shinto, modified by cmoody last update 12/2015
 
 use strict;
 
@@ -58,7 +58,7 @@ if ($days_to_pull =~ /h$/) {	# Guess I'll be looking at hours instead of days
 my $files_to_pull = $ARGV[2];
 
 ### Where we want to backup stuff to.
-my $backup_root = "/apps/falcon//logs";
+my $backup_root = "/apps/falcon/server_logs/logs";
 
 ### Where we store some temporary files that need to be renamed
 my $tmp_dir = "$backup_root/tmp/backup2array/";
@@ -126,17 +126,17 @@ while (defined(my $ip = <LIST>)) {
   chop $ip;
   next unless ($ip =~ /^\d/);	# Omit commented-out items
 
-  next unless ($ip =~ /$machine_pattern/);
+  #next unless ($ip =~ /$machine_pattern/);
 
   print $ip . "\n";
-  my $findcommand = "ssh -o ConnectTimeout=5 -qt $ip '/usr/bin/find /var/log/mxl/rotate/ -type f $findtime";
+  my $findcommand = "ssh -o ConnectTimeout=5 -qt $ip '/bin/find /apps/falcon/tomcat/tomcat_ehr/current/logs/ -type f $findtime";
   if ($files_to_pull ne 'all') {
 	if ($files_to_pull =~ /,/) {
 		foreach my $filecore (split(/,/,$files_to_pull)) {
 			$findcommand .= " -name \"$filecore*\"";
 			# Chain in another find command if I'm not at the last $filecore
 			if ($files_to_pull !~ /,$filecore$/) {
-			       $findcommand .= "; /usr/bin/find /var/log/mxl/rotate/ -type f $findtime";
+			       $findcommand .= "; /usr/bin/find /apps/falcon/tomcat/tomcat_ehr/current/logs/ -type f $findtime";
 			}
 		}
 	} else {
@@ -163,7 +163,7 @@ while (defined(my $ip = <LIST>)) {
     if ($file =~ /\n$/ || $file =~ /\r$/) {
       chop $file;
     }
-    $file =~ s:/var/log/mxl/rotate/::;
+    $file =~ s:/apps/falcon/tomcat/tomcat_ehr/current/logs/::;
 
     print LOGFILE "Processing ($ip) $file\n";
 
@@ -175,7 +175,7 @@ while (defined(my $ip = <LIST>)) {
       system "mkdir -p $targetpath";
 
       print LOGFILE "   Downloading File...\n";
-      my $command = "scp -p $ip:/var/log/mxl/rotate/$file $tmp_dir";
+      my $command = "scp -p $ip:/apps/falcon/tomcat/tomcat_ehr/current/logs/$file $tmp_dir";
       print LOGFILE ":: $command\n";
       my $rc = system $command;
       if ($rc == 0) {  ## sucessful copy
@@ -189,7 +189,7 @@ while (defined(my $ip = <LIST>)) {
 
 	unless ($read_only) {
           print LOGFILE "   Removing file from remote server...\n";
-          $command = "ssh -qt $ip \"rm -f /var/log/mxl/rotate/$file\"";
+          $command = "ssh -qt $ip \"rm -f /apps/falcon/tomcat/tomcat_ehr/current/logs/$file\"";
           system $command;
           print LOGFILE ":: $command\n";
 	}
@@ -214,7 +214,7 @@ while (defined(my $ip = <LIST>)) {
       }
       if ($download) {
         print LOGFILE "   Downloading File...\n";
-        $command = "scp -p $ip:/var/log/mxl/rotate/$file $targetpath/";
+        $command = "scp -p $ip:/apps/falcon/tomcat/tomcat_ehr/current/logs/$file $targetpath/";
         $rc = system $command;
         print LOGFILE ":: $command\n";
       }
@@ -222,7 +222,7 @@ while (defined(my $ip = <LIST>)) {
       if ($rc == 0) {  ## sucessful copy
 	unless ($read_only) {
           print LOGFILE "   Removing file from remote server...\n";
-          $command = "ssh -qt $ip \"rm -f /var/log/mxl/rotate/$file\"";
+          $command = "ssh -qt $ip \"rm -f /apps/falcon/tomcat/tomcat_ehr/current/logs/$file\"";
           system $command;
           print LOGFILE ":: $command\n";
 	}
